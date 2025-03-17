@@ -1,0 +1,303 @@
+---
+title: "Heat maps for nursery"
+author: "Darla Knuth"
+date: "2025-03-12"
+output: html_document
+---
+
+```{r include=FALSE}
+options(java.parameters = "-Xmx8000m")
+library(tidyverse)
+library(xlsx)
+library(climatrends)
+library(RColorBrewer)
+library(DT)
+```
+
+```{r include=FALSE}
+#inventory_2025 <- read.xlsx("Inventory W24.GN24.xlsx", sheetIndex = 1)
+
+wi_inventory <- read.csv("2025 Wisconsin Developmental Inventory.csv")
+
+wi_hybrid_inventory <- read.csv("2025 WI Stage1 Hybrid Inventory.csv")
+
+range_row <- read.xlsx("Maturity Data W24.GN24.xlsx", sheetName = "W24 Bag Notes Selfs")
+
+range_row <- range_row %>% 
+  select(c("Nursery.Row", "Range", "Row")) %>% 
+  rename(
+    source_gen = "Nursery.Row"
+  )
+```
+
+```{r include=FALSE}
+
+wi_inventory <- wi_inventory %>% 
+  separate(Source, into = c("source_w", "source_num", "expected_ears"), 
+           sep = "-",
+           remove = FALSE) %>% 
+  unite(col = source_gen, source_w, source_num, sep = "-") %>% 
+  mutate(
+    expected_ears = as.numeric(expected_ears)
+  )
+
+wi_inventory <- wi_inventory %>% 
+  mutate(
+    valid_packet = case_when(
+      Working.Qty > 0 ~ "1",
+      Working.Qty == 0 ~ "0",
+      Working.Qty <= 0 ~ "0",
+      is.na(Working.Qty) ~ "0",)
+  ) 
+
+wi_inventory$valid_packet <- as.numeric(wi_inventory$valid_packet)
+
+wi_inventory <- wi_inventory %>% 
+  group_by(source_gen) %>% 
+  mutate(
+    total_seed = sum(Working.Qty),
+    ear_number = sum(valid_packet),
+    ears_vs_expected = round(ear_number/expected_ears, digits = 2)
+    ) 
+
+wi_inventory$ears_vs_expected <- as.numeric(wi_inventory$ears_vs_expected)
+
+
+test <-  wi_inventory %>% 
+  separate(source_gen, into = c("drop", "order_num"), 
+           sep = "-",
+           remove = FALSE) %>% 
+  mutate(
+    order_num = as.numeric(order_num)
+  ) %>% 
+  arrange(order_num) %>% 
+  group_by(order_num) %>% 
+  slice_max(order_by = PedId) %>% 
+  distinct()
+
+test_4 <- range_row %>% 
+  distinct()
+    
+```
+
+```{r include=FALSE}
+test_2 <- left_join(test, test_4)
+
+```
+
+# Summary of WI Nursery Pollinations {.tabset}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ test <- test_2 %>% 
+  mutate(
+    planting_num = case_when(
+      order_num >= 1000 & order_num <= 2110 ~ 1.1,
+      order_num >= 2296 & order_num <= 3362 ~ 1.2,
+      order_num >= 3484 & order_num <= 4661 ~ 1.3,
+      order_num >= 4664 & order_num <= 5849 ~ 2.1,
+      order_num >= 5900 & order_num <= 7145 ~ 2.2,
+      order_num >= 7148 & order_num <= 8201 ~ 2.3,
+      order_num >= 8250 & order_num <= 9060 ~ 2.4,
+      order_num >= 9210 & order_num <= 10054 ~ 2.5,
+      order_num >= 10170 & order_num <= 10604 ~ 2.6,
+      order_num >= 11451 & order_num <= 11990 ~ 2.7,
+      order_num >= 12090 & order_num <= 13049 ~ 2.8
+    )
+  )
+
+heat_map <- test %>% 
+  select(c("Range","Row","ears_vs_expected", "planting_num")) %>% 
+  arrange(Row, Range) %>% 
+  ungroup() %>% 
+  filter(ears_vs_expected <= 1) %>% 
+  filter(!is.na("planting_num"))
+
+```
+
+## Planting 1 (May 16th)
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+planting_1 <- heat_map %>% 
+  filter(planting_num == 1.1 | planting_num == 1.2 | planting_num == 1.3)
+
+planting_1 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
+  geom_tile() +
+  facet_wrap(vars(planting_num)) +
+  theme_bw() +
+  scale_y_continuous(breaks = seq(0,35,5)) +
+  scale_x_continuous(breaks = seq(0,50,5)) +
+  labs(title = "Success of Pollinations in Planting 1") +
+  scale_fill_gradient2(high = "darkgreen", mid = "yellow", low = "darkred", midpoint = 0.5, name = "Ears Harvested/Expected")
+```
+
+### Successful Pollinations in Nursery Sections 1.1, 1.2, 1.3
+
+```{r echo=FALSE}
+DT::datatable(planting_1, 
+              colnames = c("Nursery Section" = "planting_num",
+                           "Source" = "order_num",
+                           "Prop. Pols Completed" = "ears_vs_expected"),
+              caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;',
+    'Table 1: ', htmltools::em('Portion of pollinations completed successfully by range and row')),
+    filter = 'top')
+```
+
+## Planting 2 (June 14th)
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+planting_2 <- heat_map %>% 
+  filter(planting_num == 2.1 | planting_num == 2.2 | planting_num == 2.3)
+
+planting_2 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
+  geom_tile() +
+  facet_wrap(vars(planting_num)) +
+  theme_bw() +
+  scale_y_continuous(breaks = seq(0,35,5)) +
+  scale_x_continuous(breaks = seq(0,50,5)) +
+  labs(title = "Success of Pollinations in Planting 2") +
+  scale_fill_gradient2(high = "darkgreen", mid = "yellow", low = "darkred", midpoint = 0.5, name = "Ears Harvested/Expected")  
+```
+
+### Successful Pollinations in Nursery Sections 2.1, 2.2, 2.3
+
+```{r echo =FALSE}
+DT::datatable(planting_2, 
+              colnames = c("Nursery Section" = "planting_num",
+                           "Source" = "order_num",
+                           "Prop. Pols Completed" = "ears_vs_expected"),
+              caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;',
+    'Table 1: ', htmltools::em('Portion of pollinations completed successfully by range and row')),
+    filter = 'top')
+```
+
+## Planting 3 (June 27th)
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+planting_3 <- heat_map %>% 
+  filter(planting_num == 2.4 | planting_num == 2.5 | planting_num == 2.6)
+
+planting_3 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
+  geom_tile() +
+  facet_wrap(vars(planting_num)) +
+  theme_bw() +
+  scale_y_continuous(breaks = seq(0,35,5)) +
+  scale_x_continuous(breaks = seq(0,50,5)) +
+  labs(title = "Success of Pollinations in Planting 3") +
+  scale_fill_gradient2(high = "darkgreen", mid = "yellow", low = "darkred", midpoint = 0.5,
+                       name = "Ears Harvested/Expected")
+```
+
+### Successful Pollinations in Nursery Sections 2.4, 2.5, 2.6
+
+```{r echo=FALSE}
+DT::datatable(planting_3, 
+              colnames = c("Nursery Section" = "planting_num",
+                           "Source" = "order_num",
+                           "Prop. Pols Completed" = "ears_vs_expected"),
+              caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;',
+    'Table 1: ', htmltools::em('Portion of pollinations completed successfully by range and row')),
+    filter = 'top')
+```
+
+
+## Planting 4 (July 12th)
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+planting_4 <- heat_map %>% 
+  filter(planting_num == 2.7 | planting_num == 2.8)
+
+planting_4 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
+  geom_tile() +
+  facet_wrap(vars(planting_num)) +
+  theme_bw() +
+  scale_y_continuous(breaks = seq(0,35,5)) +
+  scale_x_continuous(breaks = seq(0,50,5)) +
+  labs(title = "Success of Pollinations in Planting 4") +
+  scale_fill_gradient2(high = "darkgreen", mid = "yellow", low = "darkred", midpoint = 0.5, name = "Ears Harvested/Expected")
+```
+
+### Successful Pollinations in Nursery Sections 2.7 and 2.8
+
+```{r echo=FALSE}
+DT::datatable(planting_4, 
+              colnames = c("Nursery Section" = "planting_num",
+                           "Source" = "order_num",
+                           "Prop. Pols Completed" = "ears_vs_expected"),
+              caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;',
+    'Table 1: ', htmltools::em('Portion of pollinations completed successfully by range and row')),
+    filter = 'top')
+```
+
+
+## Test Crosses
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+wi_hybrid_inventory <- wi_hybrid_inventory %>% 
+  select(c("Source", "Working.Qty","PedId")) %>% 
+  mutate_all(~replace(., is.na(.), 0)) %>% 
+  mutate(source_gen =
+           gsub("/", "", Source))
+
+test_idk <- left_join(wi_hybrid_inventory, range_row)
+
+test_idk <- test_idk %>% 
+  distinct() %>% 
+  separate(source_gen, into = c("drop","order_num")) %>% 
+  select(!c("drop"))
+
+test_crosses <- test_idk %>% 
+  mutate(
+    planting_num = case_when(
+      order_num >= 1000 & order_num <= 2110 ~ 1.1,
+      order_num >= 2296 & order_num <= 3362 ~ 1.2,
+      order_num >= 3484 & order_num <= 4661 ~ 1.3,
+      order_num >= 4664 & order_num <= 5849 ~ 2.1,
+      order_num >= 5900 & order_num <= 7145 ~ 2.2,
+      order_num >= 7148 & order_num <= 8201 ~ 2.3,
+      order_num >= 8250 & order_num <= 9060 ~ 2.4,
+      order_num >= 9210 & order_num <= 10054 ~ 2.5,
+      order_num >= 10170 & order_num <= 10604 ~ 2.6,
+      order_num >= 11451 & order_num <= 11990 ~ 2.7,
+      order_num >= 12090 & order_num <= 13049 ~ 2.8
+    )
+  )
+
+x <-1:1800
+
+test_crosses %>% ggplot(aes(x = Row, y = Range, fill = Working.Qty)) +
+  geom_tile() +
+  facet_wrap(vars(planting_num)) +
+  theme_bw() +
+  scale_y_continuous(breaks = seq(0,35,5)) +
+  scale_x_continuous(breaks = seq(0,50,5)) +
+  labs(title = "Quanity of Seed Harvested in TC") +
+  binned_scale(aesthetics = "fill",
+               scale_name = "stepsn", 
+               palette = function(x) c("darkred","#B82921", "#EBE446", "#30CA3D", "#40A048", "#437547","#465E48"),
+               breaks = c(50,100,200,300,500,1000),
+               limits = c(0, 1600),
+               show.limits = TRUE, 
+               guide = "colorsteps"
+  )
+           
+```
+
+### Quantity of Seed Recover from Nursery Test Crosses 
+
+```{r echo=FALSE}
+test_crosses <- test_crosses %>% 
+  select(!c("order_num", "PedId"))
+
+DT::datatable(test_crosses, 
+              colnames = c("Nursery Section" = "planting_num",
+                           "Number of Kernels" = "Working.Qty"),
+              caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;',
+    'Table 1: ', htmltools::em('Amount of test cross seed harvested by range and row')),
+    filter = 'top')
+```
+
