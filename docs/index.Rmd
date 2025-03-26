@@ -106,11 +106,12 @@ test_2 <- left_join(test, test_4)
   )
 
 heat_map <- test %>% 
-  select(c("Range","Row","ears_vs_expected", "planting_num")) %>% 
-  arrange(Row, Range) %>% 
   ungroup() %>% 
+  select(c("source_gen","Range","Row","ears_vs_expected", "planting_num")) %>% 
+  arrange(Row, Range) %>% 
   filter(ears_vs_expected <= 1) %>% 
   filter(!is.na("planting_num"))
+
 
 ```
 
@@ -118,7 +119,10 @@ heat_map <- test %>%
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 planting_1 <- heat_map %>% 
-  filter(planting_num == 1.1 | planting_num == 1.2 | planting_num == 1.3)
+  filter(planting_num == 1.1 | planting_num == 1.2 | planting_num == 1.3) %>% 
+  mutate(
+    planting_num = as.factor(planting_num)
+  )
 
 planting_1 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
   geom_tile() +
@@ -135,7 +139,7 @@ planting_1 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
 ```{r echo=FALSE}
 DT::datatable(planting_1, 
               colnames = c("Nursery Section" = "planting_num",
-                           "Source" = "order_num",
+                           "Source" = "source_gen",
                            "Prop. Pols Completed" = "ears_vs_expected"),
               caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center;',
@@ -147,7 +151,10 @@ DT::datatable(planting_1,
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 planting_2 <- heat_map %>% 
-  filter(planting_num == 2.1 | planting_num == 2.2 | planting_num == 2.3)
+  filter(planting_num == 2.1 | planting_num == 2.2 | planting_num == 2.3)%>% 
+  mutate(
+    planting_num = as.factor(planting_num)
+  )
 
 planting_2 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
   geom_tile() +
@@ -164,7 +171,7 @@ planting_2 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
 ```{r echo =FALSE}
 DT::datatable(planting_2, 
               colnames = c("Nursery Section" = "planting_num",
-                           "Source" = "order_num",
+                           "Source" = "source_gen",
                            "Prop. Pols Completed" = "ears_vs_expected"),
               caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center;',
@@ -176,7 +183,10 @@ DT::datatable(planting_2,
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 planting_3 <- heat_map %>% 
-  filter(planting_num == 2.4 | planting_num == 2.5 | planting_num == 2.6)
+  filter(planting_num == 2.4 | planting_num == 2.5 | planting_num == 2.6) %>% 
+  mutate(
+    planting_num = as.factor(planting_num)
+  )
 
 planting_3 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
   geom_tile() +
@@ -194,7 +204,7 @@ planting_3 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
 ```{r echo=FALSE}
 DT::datatable(planting_3, 
               colnames = c("Nursery Section" = "planting_num",
-                           "Source" = "order_num",
+                           "Source" = "source_gen",
                            "Prop. Pols Completed" = "ears_vs_expected"),
               caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center;',
@@ -207,7 +217,10 @@ DT::datatable(planting_3,
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 planting_4 <- heat_map %>% 
-  filter(planting_num == 2.7 | planting_num == 2.8)
+  filter(planting_num == 2.7 | planting_num == 2.8)%>% 
+  mutate(
+    planting_num = as.factor(planting_num)
+  )
 
 planting_4 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
   geom_tile() +
@@ -224,7 +237,7 @@ planting_4 %>% ggplot(aes(x = Row, y = Range, fill = ears_vs_expected)) +
 ```{r echo=FALSE}
 DT::datatable(planting_4, 
               colnames = c("Nursery Section" = "planting_num",
-                           "Source" = "order_num",
+                           "Source" = "source_gen",
                            "Prop. Pols Completed" = "ears_vs_expected"),
               caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center;',
@@ -290,7 +303,10 @@ test_crosses %>% ggplot(aes(x = Row, y = Range, fill = Working.Qty)) +
 
 ```{r echo=FALSE}
 test_crosses <- test_crosses %>% 
-  select(!c("order_num", "PedId"))
+  select(!c("order_num", "PedId"))%>% 
+  mutate(
+    planting_num = as.factor(planting_num)
+  )
 
 DT::datatable(test_crosses, 
               colnames = c("Nursery Section" = "planting_num",
